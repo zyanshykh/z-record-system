@@ -38,6 +38,8 @@
 │   ├── globals.css        # Tailwind directives and CSS variables
 │   ├── layout.tsx         # Next.js 14 RootLayout with branding, metadata & viewport
 │   ├── page.tsx           # Home scoreboard page
+│   ├── new-game/
+│   │   └── page.tsx       # Dedicated /new-game route for session setup
 │   └── history/
 │       └── page.tsx       # Dedicated /history route
 ├── components/
@@ -45,8 +47,10 @@
 │   ├── Header.tsx         # Header with Z branding, tagline, tabs, & dark mode toggle
 │   ├── PlayerCard.tsx     # Player card with large score, bust meter, undo & tap-to-edit
 │   ├── ScoreInput.tsx     # Number input with positive validation and quick pip presets
+│   ├── NewGameForm.tsx    # Modular player setup form (2-6 players, custom target score)
+│   ├── NewGameScreen.tsx  # Setup screen wrapper with rules summary
+│   ├── NewGameModal.tsx   # Modal wrapper for quick session creation
 │   ├── ActiveGame.tsx     # Live scoreboard and full round matrix table
-│   ├── NewGameScreen.tsx  # Setup screen for 2 to 6 players and custom target score
 │   ├── GameResultsModal.tsx # Winner/Loser announcement and sorted standings modal
 │   ├── MatchDetailsModal.tsx # Full round-by-round log viewer for past matches
 │   ├── GameHistory.tsx    # Searchable match history with most-recent-first sorting

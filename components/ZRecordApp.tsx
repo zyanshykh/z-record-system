@@ -31,12 +31,14 @@ export function ZRecordApp({ initialTab = 'active' }: ZRecordAppProps) {
   >(initialTab);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Sync with browser URL /history or hash if accessible
+  // Sync with browser URL /history or /new-game if accessible
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const pathname = window.location.pathname;
       if (pathname.includes('/history')) {
         setCurrentTab('history');
+      } else if (pathname.includes('/new-game')) {
+        setCurrentTab('new-game');
       }
     }
   }, []);

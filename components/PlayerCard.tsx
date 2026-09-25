@@ -236,8 +236,8 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
                       }
                     }}
                   >
-                    <span className="font-mono text-[11px] font-semibold text-zinc-500">
-                      R{idx + 1}
+                    <span className="font-mono text-[11px] font-semibold text-zinc-400">
+                      Round {idx + 1}:
                     </span>
 
                     {isEditing ? (
@@ -298,7 +298,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
                     ) : (
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-bold text-amber-400">
-                          +{score}
+                          {score}
                         </span>
 
                         <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">

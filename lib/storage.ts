@@ -106,7 +106,10 @@ export function getActiveSessionId(): string | null {
   try {
     const active = localStorage.getItem(STORAGE_KEY_ACTIVE_ID);
     if (active) return active;
-    return 'game-demo-2';
+    const all = getStoredSessions();
+    const firstActive = all.find((s) => s.status === 'active');
+    if (firstActive) return firstActive.id;
+    return all.length > 0 ? all[0].id : null;
   } catch {
     return null;
   }

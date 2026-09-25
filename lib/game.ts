@@ -1,7 +1,7 @@
-import { GameSession, Player, PlayerStats } from '@/types';
+import { GameSession, Player, PlayerStats, Team } from '@/types';
 
 /**
- * Recalculates total scores for each player from their roundScores array.
+ * Recalculates total scores for each player/team from their roundScores array.
  */
 export function recalculateTotals(players: Player[]): Player[] {
   return players.map((player) => ({
@@ -13,11 +13,11 @@ export function recalculateTotals(players: Player[]): Player[] {
 /**
  * Checks if a game session has met victory/loss conditions or determines winner/loser.
  * 
- * CORE RULE for Z Record System:
+ * CORE RULE for Z Record System (Solo & Partner):
  * - Game uses point accumulation.
  * - Whichever player/team reaches or crosses target (default 100) FIRST is marked as the LOSER,
  *   and the game ends immediately.
- * - Among the remaining players, the one with the LOWEST total score is the WINNER.
+ * - Among the remaining players/teams, the one with the LOWEST total score is the WINNER.
  */
 export function evaluateSessionOutcome(session: GameSession): {
   winnerId: string | null;
@@ -39,11 +39,11 @@ export function evaluateSessionOutcome(session: GameSession): {
   const bustedPlayers = players.filter((p) => p.totalScore >= target);
 
   if (bustedPlayers.length > 0) {
-    // The player who crossed target first/highest is the LOSER
+    // The player/team who crossed target first/highest is the LOSER
     const sortedDesc = [...bustedPlayers].sort((a, b) => b.totalScore - a.totalScore);
     const loser = sortedDesc[0];
 
-    // Among remaining players (not the loser), player with LOWEST score is WINNER
+    // Among remaining players (not the loser), player/team with LOWEST score is WINNER
     const nonLosers = players.filter((p) => p.id !== loser.id);
     const sortedNonLosers = [...nonLosers].sort((a, b) => a.totalScore - b.totalScore);
     const winner = sortedNonLosers[0] || sortedAscending[0];
@@ -57,8 +57,6 @@ export function evaluateSessionOutcome(session: GameSession): {
   }
 
   // Game still in progress:
-  // Leader is current lowest score (best position)
-  // Danger player is current highest score (closest to 100 bust)
   const currentLeader = sortedAscending[0];
   const currentDanger = sortedAscending[sortedAscending.length - 1];
 
@@ -71,7 +69,7 @@ export function evaluateSessionOutcome(session: GameSession): {
 }
 
 /**
- * Adds a single score entry to a specific player and updates totals & game status.
+ * Adds a single score entry to a specific player in Solo mode.
  */
 export function addPlayerScore(
   session: GameSession,
@@ -106,7 +104,58 @@ export function addPlayerScore(
 }
 
 /**
- * Undoes the most recent round score for a single player and recalculates totals and outcome.
+ * Core Rule for Partner Mode (2 vs 2 Doubles):
+ * Exactly ONE team gets a score added per round (the points boarded/caught against them),
+ * and the OTHER team automatically gets 0 for that round.
+ */
+export function addPartnerRoundScore(
+  session: GameSession,
+  boardingTeamId: string,
+  points: number
+): GameSession {
+  // Ensure we have both teams
+  const updatedPlayers = session.players.map((team) => {
+    const isBoarding = team.id === boardingTeamId;
+    const roundScore = isBoarding ? points : 0;
+    const newRounds = [...(team.roundScores || []), roundScore];
+    return {
+      ...team,
+      roundScores: newRounds,
+      totalScore: newRounds.reduce((sum, n) => sum + (Number(n) || 0), 0),
+    };
+  });
+
+  const outcome = evaluateSessionOutcome({
+    ...session,
+    players: updatedPlayers,
+  });
+
+  const shouldAutoComplete = outcome.hasEnded && session.status === 'active';
+
+  return {
+    ...session,
+    players: updatedPlayers,
+    currentRound: (session.currentRound || 1) + 1,
+    winnerId: shouldAutoComplete ? outcome.winnerId : session.winnerId,
+    loserId: shouldAutoComplete ? outcome.loserId : session.loserId,
+    status: shouldAutoComplete ? 'completed' : session.status,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Undoes the most recent round in Partner mode (pops last round score from BOTH teams).
+ */
+export function undoPartnerLastRound(session: GameSession): GameSession {
+  const maxRounds = Math.max(0, ...session.players.map((p) => p.roundScores?.length || 0));
+  if (maxRounds === 0) return session;
+
+  const roundIndexToRemove = maxRounds - 1;
+  return removeRoundAtIndex(session, roundIndexToRemove);
+}
+
+/**
+ * Undoes the most recent round score for a single player in Solo mode.
  */
 export function undoPlayerLastScore(
   session: GameSession,
@@ -121,7 +170,7 @@ export function undoPlayerLastScore(
 }
 
 /**
- * Removes a round score for a single player by index and recalculates totals and outcome.
+ * Removes a round score for a single player by index and recalculates totals.
  */
 export function removePlayerScoreAtIndex(
   session: GameSession,
@@ -192,7 +241,7 @@ export function appendRoundScores(
 }
 
 /**
- * Removes a round from all players (1-indexed round or 0-indexed index).
+ * Removes a round across all players/teams (0-indexed).
  */
 export function removeRoundAtIndex(session: GameSession, roundIndex: number): GameSession {
   const updatedPlayers = session.players.map((player) => {
@@ -224,7 +273,7 @@ export function removeRoundAtIndex(session: GameSession, roundIndex: number): Ga
 }
 
 /**
- * Edits a specific round score for a single player.
+ * Edits a specific round score for a single player or team.
  */
 export function updateRoundScore(
   session: GameSession,
@@ -261,7 +310,7 @@ export function updateRoundScore(
 }
 
 /**
- * Aggregates statistics across all completed and active games for all unique player names.
+ * Aggregates statistics across all completed and active games for all unique player/team names.
  */
 export function computeLeaderboardStats(sessions: GameSession[]): PlayerStats[] {
   const statsMap: Record<

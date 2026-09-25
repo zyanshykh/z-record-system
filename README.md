@@ -17,16 +17,19 @@
 
 ## 🚀 Key Features
 
-- **Next.js 14 App Router**: Modern server/client architecture with clean routing (`/` and `/history`).
-- **Side-by-Side Player Cards**: Beautiful responsive cards for 2 to 6 players/teams with large total scores and progress bars toward the 100-point bust.
-- **Real-Time Score Entry & Pip Shortcuts**: Direct number input on each card plus quick-pip buttons (`+5`, `+10`, `+20`, `+30`).
-- **Input Validation**: Strict validation ensures scores are positive whole numbers (`> 0`) and blocks invalid/empty submissions.
+- **Next.js 14 App Router**: Modern server/client architecture with clean routing (`/`, `/new-game`, and `/history`).
+- **Partner Mode (2 vs 2 Doubles)**:
+  - 2 Teams with 2 named partners each (e.g. Team A = Player1 + Player2, Team B = Player3 + Player4).
+  - Team-level combined scoring: each round, select which team boarded points (losing side of hand); the other team is automatically awarded 0 for that round.
+  - Side-by-side round history showing the exact alternating zero-and-board pattern.
+- **Solo Mode (2 to 6 Players)**: Classic individual free-for-all scoring with custom player names and separate score tracking.
+- **Side-by-Side Live Cards**: Responsive grid for teams/players with large bold total scores, bust meters, and scrollable round histories.
+- **Strict Real-Time Match History**: 0% dummy/demo data. Clean start for every new user; history populates only with games actually played and saved.
 - **Mistake Recovery (Undo & Edit)**:
-  - **Undo Last Score**: Remove the most recent round score with one tap.
-  - **Tap-to-Edit Any Round**: Tap any past round score in a player's history to update or delete it with automatic total recalculation.
-- **Match History Archive (`/history`)**: Browse all past matches sorted most recent first, with winner/loser tags, final scores, search, and full round-by-round inspection modal.
+  - **Undo Round / Undo Last Score**: Revert the previous round or score with one tap.
+  - **Tap-to-Edit Any Round**: Tap any past round row to update points or delete.
+- **Match History Archive (`/history`)**: Browse past Solo and Partner matches sorted most recent first, with winner/loser badges, search, filter, and complete round-by-round inspections.
 - **JSON Backup & Restore**: Export and import full game logs for backups or cross-device transfer.
-- **Dark & Light Mode**: Auto-detects system preferences with a manual toggle in the header.
 - **Zero-Config Vercel Deployable**: 100% client-side `localStorage` persistence with no server-only dependencies or external database required. Clean `npm install` without `--force` or `--legacy-peer-deps`.
 
 ---

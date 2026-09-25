@@ -8,7 +8,7 @@ import {
   setActiveSessionId,
   saveSingleSession,
   deleteSessionById,
-  resetToDefaults,
+  clearAllGameData,
 } from '@/lib/storage';
 import { ThemeProvider } from '@/lib/theme';
 import { Header } from '@/components/Header';
@@ -17,7 +17,7 @@ import { NewGameScreen } from '@/components/NewGameScreen';
 import { GameHistory } from '@/components/GameHistory';
 import { Leaderboard } from '@/components/Leaderboard';
 import { DominoRuleGuide } from '@/components/DominoRuleGuide';
-import { RotateCcw } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 
 interface ZRecordAppProps {
   initialTab?: 'active' | 'new-game' | 'history' | 'leaderboard' | 'rules';
@@ -43,7 +43,7 @@ export function ZRecordApp({ initialTab = 'active' }: ZRecordAppProps) {
     }
   }, []);
 
-  // Load initial data on mount (client-side safe)
+  // Load initial data on mount (strictly real user data only from localStorage)
   useEffect(() => {
     const loadedSessions = getStoredSessions();
     setSessions(loadedSessions);
@@ -61,7 +61,7 @@ export function ZRecordApp({ initialTab = 'active' }: ZRecordAppProps) {
     setActiveSessionId(updatedSession.id);
   };
 
-  // Create new session from 2-6 players screen and start game immediately
+  // Create new session from Partner or Solo setup and start game immediately
   const handleCreateGame = (newSession: GameSession) => {
     saveSingleSession(newSession);
     setActiveSessionId(newSession.id);
@@ -88,13 +88,12 @@ export function ZRecordApp({ initialTab = 'active' }: ZRecordAppProps) {
     setCurrentTab('active');
   };
 
-  const handleResetData = () => {
-    if (confirm('Reset all match data to default sample games?')) {
-      resetToDefaults();
-      const resetSessions = getStoredSessions();
-      setSessions(resetSessions);
-      setActiveId('game-demo-2');
-      setActiveSessionId('game-demo-2');
+  const handleClearAllData = () => {
+    if (confirm('Clear all your stored games and reset to an empty state? This action cannot be undone.')) {
+      clearAllGameData();
+      setSessions([]);
+      setActiveId(null);
+      setCurrentTab('new-game');
     }
   };
 
@@ -164,27 +163,31 @@ export function ZRecordApp({ initialTab = 'active' }: ZRecordAppProps) {
 
           {currentTab === 'rules' && <DominoRuleGuide />}
 
-          {/* Global Persistence Status & Reset Action */}
+          {/* Global Persistence Status & Data Clear Action */}
           <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-zinc-200 dark:border-zinc-900 pt-6 text-xs text-zinc-500">
             <div className="flex items-center gap-3">
               <span className="font-semibold text-zinc-600 dark:text-zinc-400">
                 Z Record System
               </span>
-              <span>•</span>
-              <button
-                onClick={handleResetData}
-                className="flex items-center gap-1 text-zinc-500 hover:text-amber-500 dark:text-zinc-400 dark:hover:text-amber-400 transition"
-                title="Reset to default sample domino games"
-              >
-                <RotateCcw className="h-3 w-3" />
-                Reset Demo Data
-              </button>
+              {sessions.length > 0 && (
+                <>
+                  <span>•</span>
+                  <button
+                    onClick={handleClearAllData}
+                    className="flex items-center gap-1 text-zinc-500 hover:text-red-500 dark:text-zinc-400 dark:hover:text-red-400 transition"
+                    title="Clear all stored matches"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    Clear Saved Matches ({sessions.length})
+                  </button>
+                </>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
               <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 shadow-sm" />
               <span className="font-medium text-zinc-600 dark:text-zinc-400">
-                Local Storage Persistence Active (Vercel Ready)
+                100% Client-Side LocalStorage • Real Match Data Only
               </span>
             </div>
           </div>

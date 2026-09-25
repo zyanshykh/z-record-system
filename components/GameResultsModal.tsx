@@ -164,7 +164,12 @@ export const GameResultsModal: React.FC<GameResultsModalProps> = ({
                         #{idx + 1}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 font-bold text-white">
-                        {p.name}
+                        <div>{p.name}</div>
+                        {session.teams?.find((t) => t.id === p.id)?.players && (
+                          <div className="text-[10px] text-zinc-400 font-normal">
+                            {session.teams.find((t) => t.id === p.id)!.players.join(' & ')}
+                          </div>
+                        )}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-center text-xs text-zinc-400">
                         {p.roundScores.length}

@@ -12,10 +12,12 @@ import {
   X,
   AlertTriangle,
   Undo2,
+  Users,
 } from 'lucide-react';
 
 interface PlayerCardProps {
   player: Player;
+  subtitle?: string | null; // e.g. Partner names "Carlos & Mateo"
   rank: number;
   isLeader: boolean;
   isWinner: boolean;
@@ -26,10 +28,12 @@ interface PlayerCardProps {
   onEditRoundScore?: (playerId: string, roundIndex: number, newScore: number) => void;
   onDeleteRoundScore?: (playerId: string, roundIndex: number) => void;
   isGameOver?: boolean;
+  showScoreInput?: boolean; // When in partner mode, score is entered via PartnerScorePanel
 }
 
 export const PlayerCard: React.FC<PlayerCardProps> = ({
   player,
+  subtitle,
   rank,
   isLeader,
   isWinner,
@@ -40,6 +44,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
   onEditRoundScore,
   onDeleteRoundScore,
   isGameOver = false,
+  showScoreInput = true,
 }) => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState<string>('');
@@ -58,8 +63,8 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
 
   const handleSaveEdit = (idx: number) => {
     const val = Number(editingValue.trim());
-    if (isNaN(val) || !Number.isInteger(val) || val <= 0) {
-      setEditError('Must be a positive number (> 0)');
+    if (isNaN(val) || !Number.isInteger(val) || val < 0) {
+      setEditError('Must be 0 or a positive number');
       return;
     }
     if (onEditRoundScore) {
@@ -103,9 +108,17 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
             >
               #{rank}
             </span>
-            <h3 className="truncate text-base font-extrabold text-white" title={player.name}>
-              {player.name}
-            </h3>
+            <div className="min-w-0">
+              <h3 className="truncate text-base font-extrabold text-white" title={player.name}>
+                {player.name}
+              </h3>
+              {subtitle && (
+                <div className="flex items-center gap-1 text-[11px] text-zinc-400 truncate">
+                  <Users className="h-3 w-3 text-amber-500/80 shrink-0" />
+                  <span>{subtitle}</span>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5">
@@ -189,13 +202,13 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
               Round History
             </span>
 
-            {/* Undo Last Score button */}
+            {/* Undo Last Score button (visible in Solo mode) */}
             <div className="flex items-center gap-2">
               <span className="text-[11px] text-zinc-500">
                 {roundScores.length} {roundScores.length === 1 ? 'round' : 'rounds'}
               </span>
 
-              {roundScores.length > 0 && onUndoLastScore && (
+              {showScoreInput && roundScores.length > 0 && onUndoLastScore && (
                 <button
                   type="button"
                   onClick={() => onUndoLastScore(player.id)}
@@ -218,7 +231,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
               No scores logged yet
             </div>
           ) : (
-            <div className="max-h-40 space-y-1.5 overflow-y-auto pr-1">
+            <div className="max-h-48 space-y-1.5 overflow-y-auto pr-1">
               {roundScores.map((score, idx) => {
                 const isEditing = editingIndex === idx;
 
@@ -228,6 +241,8 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
                     className={`group flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs transition cursor-pointer ${
                       isEditing
                         ? 'bg-zinc-800 border border-amber-500/50'
+                        : score === 0
+                        ? 'bg-zinc-950/40 border border-transparent opacity-75'
                         : 'bg-zinc-950/60 hover:bg-zinc-800/80 hover:border-zinc-700 border border-transparent'
                     }`}
                     onClick={() => {
@@ -297,8 +312,12 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-amber-400">
-                          {score}
+                        <span
+                          className={`font-mono font-bold ${
+                            score === 0 ? 'text-zinc-500' : 'text-amber-400'
+                          }`}
+                        >
+                          {score === 0 ? '0 (won hand)' : `+${score}`}
                         </span>
 
                         <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
@@ -320,8 +339,8 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
                                 e.stopPropagation();
                                 onDeleteRoundScore(player.id, idx);
                               }}
-                              title="Delete round score"
-                              className="rounded p-1 text-zinc-500 hover:bg-red-500/10 hover:text-red-400"
+                              title="Delete score"
+                              className="rounded p-1 text-zinc-400 hover:text-red-400 hover:bg-zinc-700"
                             >
                               <Trash2 className="h-3 w-3" />
                             </button>
@@ -337,11 +356,13 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
         </div>
       </div>
 
-      {/* Score Entry Input at Bottom */}
-      <ScoreInput
-        disabled={isGameOver}
-        onAddScore={(score) => onAddScore(player.id, score)}
-      />
+      {/* Solo Score Entry Control */}
+      {showScoreInput && (
+        <ScoreInput
+          onAddScore={(score) => onAddScore(player.id, score)}
+          disabled={isGameOver}
+        />
+      )}
     </div>
   );
 };

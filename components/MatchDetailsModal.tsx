@@ -61,6 +61,10 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({
               {isCompleted ? 'Completed Match' : 'In Progress'}
             </span>
             <span className="text-zinc-500">•</span>
+            <span className="rounded-full bg-amber-500/20 px-2.5 py-0.5 font-bold uppercase tracking-wider text-amber-400 border border-amber-500/30">
+              {session.mode === 'partner' ? 'Partner Mode (2 vs 2)' : `Solo (${session.players.length} Players)`}
+            </span>
+            <span className="text-zinc-500">•</span>
             <span className="flex items-center gap-1 text-zinc-400">
               <Calendar className="h-3.5 w-3.5" />
               {session.date}
@@ -70,7 +74,7 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({
           </div>
 
           <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">
-            {session.title || 'Dominoes Match Details'}
+            {session.title || (session.mode === 'partner' ? 'Domino Doubles Match' : 'Dominoes Match Details')}
           </h2>
 
           {session.notes && (
@@ -148,6 +152,11 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({
                   <h5 className="truncate text-sm font-bold text-white">
                     {p.name}
                   </h5>
+                  {session.teams?.find((t) => t.id === p.id)?.players && (
+                    <span className="text-[10px] text-zinc-400 block truncate">
+                      {session.teams.find((t) => t.id === p.id)!.players.join(' & ')}
+                    </span>
+                  )}
                   <div className="mt-1 font-mono text-xl font-black">
                     <span
                       className={

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GameSession } from '@/types';
 import { PlayerCard } from './PlayerCard';
+import { PartnerScorePanel } from './PartnerScorePanel';
 import { GameResultsModal } from './GameResultsModal';
 import {
   Trophy,
@@ -13,6 +14,8 @@ import {
   Layers,
   ChevronDown,
   ChevronUp,
+  Users,
+  User,
 } from 'lucide-react';
 import {
   addPlayerScore,
@@ -47,7 +50,7 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
         </div>
         <h3 className="mt-4 text-xl font-bold text-white">No Active Domino Match</h3>
         <p className="mt-2 max-w-md text-sm text-zinc-400">
-          Start a new session with 2 to 6 players to record rounds, track domino pips, and see live rankings.
+          Start a new session in Solo (2-6 players) or Partner (2 vs 2 Doubles) mode to record rounds and track scores.
         </p>
         <div className="mt-6 flex items-center gap-3">
           <button
@@ -61,7 +64,7 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
             onClick={onViewHistory}
             className="rounded-xl border border-zinc-700 bg-zinc-800/80 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-700 hover:text-white"
           >
-            Browse Past Games
+            Browse Match History
           </button>
         </div>
       </div>
@@ -70,13 +73,13 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
 
   const targetScore = session.targetScore || 100;
   const isCompleted = session.status === 'completed';
+  const isPartnerMode = session.mode === 'partner';
 
-  // Compute standings sorted from LOWEST score (best) to HIGHEST score (worst)
+  // Standings sorted from LOWEST score (best) to HIGHEST score (worst)
   const sortedAscending = [...session.players].sort((a, b) => a.totalScore - b.totalScore);
   const bestPlayerId = sortedAscending[0]?.id;
-  const highestPlayerId = sortedAscending[sortedAscending.length - 1]?.id;
 
-  // Add individual score to player
+  // Add individual score to player (Solo mode)
   const handleAddPlayerScore = (playerId: string, score: number) => {
     const updated = addPlayerScore(session, playerId, score);
     onUpdateSession(updated);
@@ -113,8 +116,9 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
     const updated: GameSession = {
       ...session,
       status: nextStatus,
-      winnerId: nextStatus === 'completed' ? outcome.winnerId : null,
-      loserId: nextStatus === 'completed' ? outcome.loserId : null,
+      winnerId: outcome.winnerId,
+      loserId: outcome.loserId,
+      updatedAt: new Date().toISOString(),
     };
     onUpdateSession(updated);
     setShowConfirmFinish(false);
@@ -150,6 +154,18 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
               {isCompleted ? 'Match Completed' : 'In Progress (Real-Time)'}
             </span>
             <span className="text-xs text-zinc-500">•</span>
+            <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-bold text-amber-400 border border-amber-500/30 flex items-center gap-1">
+              {isPartnerMode ? (
+                <>
+                  <Users className="h-3 w-3" /> Partner (2 vs 2)
+                </>
+              ) : (
+                <>
+                  <User className="h-3 w-3" /> Solo ({session.players.length}P)
+                </>
+              )}
+            </span>
+            <span className="text-xs text-zinc-500">•</span>
             <span className="flex items-center gap-1 text-xs text-zinc-400">
               <Calendar className="h-3 w-3" />
               {session.date}
@@ -158,74 +174,60 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
             <span className="text-xs font-semibold text-red-400">
               Bust Limit: {targetScore} pts (1st to reach loses!)
             </span>
-            <span className="text-xs text-zinc-500">•</span>
-            <span className="text-xs text-zinc-400">
-              {session.players.length} Players
-            </span>
           </div>
 
-          <h2 className="mt-1.5 text-xl font-black tracking-tight text-white sm:text-2xl">
-            {session.title || 'Dominoes Match'}
+          <h2 className="mt-2 text-xl font-black text-white sm:text-2xl">
+            {session.title || (isPartnerMode ? 'Domino Doubles Match' : 'Dominoes Match')}
           </h2>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2.5">
+        {/* Quick Actions */}
+        <div className="flex flex-wrap items-center gap-2">
           {isCompleted && (
             <button
               onClick={() => setShowResultsModal(true)}
-              className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/15 px-3.5 py-2 text-xs font-bold text-amber-400 hover:bg-amber-500/25 transition"
+              className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 py-2 text-xs font-bold text-zinc-950 hover:bg-amber-400 shadow transition"
             >
-              <Trophy className="h-3.5 w-3.5" />
+              <Trophy className="h-3.5 w-3.5 stroke-[2.5]" />
               View Results
             </button>
           )}
 
-          <button
-            onClick={() => setShowConfirmFinish(!showConfirmFinish)}
-            className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition ${
-              isCompleted
-                ? 'border border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white'
-                : 'border border-zinc-700 bg-zinc-800 text-zinc-200 hover:bg-zinc-700 hover:text-white'
-            }`}
-          >
-            {isCompleted ? (
-              <>
-                <RotateCcw className="h-3.5 w-3.5" />
-                Reopen Match
-              </>
-            ) : (
-              <>
-                <Award className="h-3.5 w-3.5 text-amber-400" />
-                End Match Early
-              </>
-            )}
-          </button>
+          {!isCompleted ? (
+            <button
+              onClick={() => setShowConfirmFinish(true)}
+              className="flex items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-800/80 px-3 py-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-700 hover:text-white transition"
+            >
+              <Award className="h-3.5 w-3.5 text-amber-400" />
+              End Match Now
+            </button>
+          ) : (
+            <button
+              onClick={handleToggleCompleted}
+              className="flex items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-700 hover:text-white transition"
+            >
+              <RotateCcw className="h-3.5 w-3.5 text-zinc-400" />
+              Reopen Match
+            </button>
+          )}
 
           <button
             onClick={onStartNewGame}
-            className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 py-2 text-xs font-bold text-zinc-950 shadow-md transition hover:bg-amber-400"
+            className="flex items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-700 hover:text-white transition"
           >
-            <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
+            <Plus className="h-3.5 w-3.5" />
             New Match
           </button>
         </div>
       </div>
 
-      {/* Confirmation Modal to finish game early */}
+      {/* Manual Finish Confirmation Prompt */}
       {showConfirmFinish && (
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-zinc-200">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="font-semibold text-amber-400">
-                {isCompleted ? 'Reopen this match?' : 'End match and declare winner?'}
-              </p>
-              <p className="mt-1 text-xs text-zinc-400">
-                {isCompleted
-                  ? 'This will set the match status back to Active so you can add more scores.'
-                  : `Lowest score winner: ${sortedAscending[0]?.name} (${sortedAscending[0]?.totalScore} pts). Highest score: ${sortedAscending[sortedAscending.length - 1]?.name} (${sortedAscending[sortedAscending.length - 1]?.totalScore} pts).`}
-              </p>
-            </div>
+        <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <span className="text-zinc-200">
+              End this match early and calculate final winner (lowest score) and loser?
+            </span>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleToggleCompleted}
@@ -263,20 +265,27 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
                   Lowest score of{' '}
                   <span className="font-bold text-amber-400">
                     {winner?.totalScore} pts
-                  </span>
+                  </span>{' '}
+                  across {maxRounds} rounds.
                 </p>
               </div>
             </div>
 
             {loser && (
-              <div className="flex items-center gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-2.5">
-                <Skull className="h-5 w-5 text-red-400" />
-                <div className="text-left text-xs">
-                  <span className="font-bold text-red-400 block uppercase">
-                    Loser (Reached {targetScore} First)
+              <div className="flex items-center gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/20 text-red-400">
+                  <Skull className="h-5 w-5" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-red-400">
+                    Busted (Loser)
                   </span>
-                  <span className="text-white font-bold">{loser.name}</span>{' '}
-                  <span className="text-red-300">({loser.totalScore} pts)</span>
+                  <div className="text-sm font-bold text-white">
+                    {loser.name}
+                  </div>
+                  <div className="font-mono text-xs font-bold text-red-400">
+                    {loser.totalScore} pts ({targetScore}+ limit)
+                  </div>
                 </div>
               </div>
             )}
@@ -284,12 +293,23 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
         </div>
       )}
 
-      {/* Main Game Screen: Players Cards Side-by-Side */}
+      {/* PARTNER MODE SCORE ENTRY PANEL */}
+      {isPartnerMode && !isCompleted && (
+        <PartnerScorePanel
+          session={session}
+          onUpdateSession={onUpdateSession}
+          disabled={isCompleted}
+        />
+      )}
+
+      {/* Player / Team Cards Side-by-Side */}
       <div>
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-              Live Player Cards ({session.players.length} Players)
+              {isPartnerMode
+                ? 'Team Scorecards (Side-by-Side)'
+                : `Live Player Cards (${session.players.length} Players)`}
             </span>
             <span className="text-[11px] text-zinc-500">
               • Lowest score wins! First to {targetScore} pts is marked as LOSER.
@@ -297,7 +317,7 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
           </div>
         </div>
 
-        {/* Responsive Grid of Player Cards Side-by-Side */}
+        {/* Responsive Grid of Player / Team Cards */}
         <div
           className={`grid gap-4 ${
             session.players.length === 2
@@ -310,16 +330,22 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
           }`}
         >
           {session.players.map((player) => {
-            // Rank from lowest score (1st place) to highest
             const rank = sortedAscending.findIndex((p) => p.id === player.id) + 1;
             const isWinner = session.winnerId === player.id;
             const isLoser = session.loserId === player.id;
             const isLeader = bestPlayerId === player.id && !isCompleted;
 
+            // In partner mode, subtitle displays partner names
+            const metaTeam = session.teams?.find((t) => t.id === player.id);
+            const subtitle = metaTeam?.players
+              ? `${metaTeam.players[0]} & ${metaTeam.players[1]}`
+              : null;
+
             return (
               <PlayerCard
                 key={player.id}
                 player={player}
+                subtitle={subtitle}
                 rank={rank}
                 isLeader={isLeader}
                 isWinner={isWinner}
@@ -330,13 +356,14 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
                 onEditRoundScore={handleEditPlayerRoundScore}
                 onDeleteRoundScore={handleDeletePlayerRoundScore}
                 isGameOver={isCompleted}
+                showScoreInput={!isPartnerMode}
               />
             );
           })}
         </div>
       </div>
 
-      {/* Aggregate Score Matrix / Rounds Table */}
+      {/* Full Scorecard Table */}
       <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900/60 shadow-sm">
         <button
           type="button"
@@ -364,7 +391,7 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
           <div>
             {maxRounds === 0 ? (
               <div className="p-8 text-center text-sm text-zinc-500">
-                No scores recorded yet. Add scores on the player cards above to start filling the scorecard!
+                No scores recorded yet. Record round scores above to start filling the scorecard!
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -372,11 +399,19 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
                   <thead className="border-b border-zinc-800 bg-zinc-950/70 text-xs font-semibold uppercase tracking-wider text-zinc-400">
                     <tr>
                       <th className="px-6 py-3">Round</th>
-                      {session.players.map((p) => (
-                        <th key={p.id} className="px-6 py-3">
-                          {p.name}
-                        </th>
-                      ))}
+                      {session.players.map((p) => {
+                        const metaTeam = session.teams?.find((t) => t.id === p.id);
+                        return (
+                          <th key={p.id} className="px-6 py-3">
+                            <div>{p.name}</div>
+                            {metaTeam?.players && (
+                              <div className="text-[10px] text-zinc-500 font-normal">
+                                {metaTeam.players[0]} & {metaTeam.players[1]}
+                              </div>
+                            )}
+                          </th>
+                        );
+                      })}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800/60">
@@ -387,7 +422,7 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
                       >
                         <td className="whitespace-nowrap px-6 py-3 font-medium text-zinc-300">
                           <span className="rounded bg-zinc-800 px-2 py-1 font-mono text-xs font-bold text-zinc-200">
-                            R{rIdx + 1}
+                            Round {rIdx + 1}
                           </span>
                         </td>
 
@@ -410,7 +445,7 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
                                       score > 0 ? 'text-amber-400' : 'text-zinc-500'
                                     }`}
                                   >
-                                    +{score}
+                                    {score === 0 ? '0' : `+${score}`}
                                   </span>
                                   <span className="text-xs text-zinc-500">
                                     ({cumulative})
@@ -455,16 +490,14 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
         )}
       </div>
 
-      {/* Results Modal on Losing Condition Trigger */}
-      {isCompleted && (
-        <GameResultsModal
-          session={session}
-          isOpen={showResultsModal}
-          onClose={() => setShowResultsModal(false)}
-          onStartNewGame={onStartNewGame}
-          onViewHistory={onViewHistory}
-        />
-      )}
+      {/* Game Results Modal */}
+      <GameResultsModal
+        session={session}
+        isOpen={showResultsModal && isCompleted}
+        onClose={() => setShowResultsModal(false)}
+        onStartNewGame={onStartNewGame}
+        onViewHistory={onViewHistory}
+      />
     </div>
   );
 };

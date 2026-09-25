@@ -18,6 +18,7 @@ export function recalculateTotals(players: Player[]): Player[] {
  * - Whichever player/team reaches or crosses target (default 100) FIRST is marked as the LOSER,
  *   and the game ends immediately.
  * - Among the remaining players/teams, the one with the LOWEST total score is the WINNER.
+ * - If totals drop back below the target (e.g. after undo, edit, or delete), hasEnded is false.
  */
 export function evaluateSessionOutcome(session: GameSession): {
   winnerId: string | null;
@@ -91,14 +92,12 @@ export function addPlayerScore(
     players: updatedPlayers,
   });
 
-  const shouldAutoComplete = outcome.hasEnded && session.status === 'active';
-
   return {
     ...session,
     players: updatedPlayers,
-    winnerId: shouldAutoComplete ? outcome.winnerId : session.winnerId,
-    loserId: shouldAutoComplete ? outcome.loserId : session.loserId,
-    status: shouldAutoComplete ? 'completed' : session.status,
+    winnerId: outcome.winnerId,
+    loserId: outcome.loserId,
+    status: outcome.hasEnded ? 'completed' : 'active',
     updatedAt: new Date().toISOString(),
   };
 }
@@ -113,7 +112,6 @@ export function addPartnerRoundScore(
   boardingTeamId: string,
   points: number
 ): GameSession {
-  // Ensure we have both teams
   const updatedPlayers = session.players.map((team) => {
     const isBoarding = team.id === boardingTeamId;
     const roundScore = isBoarding ? points : 0;
@@ -130,15 +128,58 @@ export function addPartnerRoundScore(
     players: updatedPlayers,
   });
 
-  const shouldAutoComplete = outcome.hasEnded && session.status === 'active';
-
   return {
     ...session,
     players: updatedPlayers,
     currentRound: (session.currentRound || 1) + 1,
-    winnerId: shouldAutoComplete ? outcome.winnerId : session.winnerId,
-    loserId: shouldAutoComplete ? outcome.loserId : session.loserId,
-    status: shouldAutoComplete ? 'completed' : session.status,
+    winnerId: outcome.winnerId,
+    loserId: outcome.loserId,
+    status: outcome.hasEnded ? 'completed' : 'active',
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * UNDO LAST ROUND (Works in BOTH Solo and Partner modes):
+ * - In Partner mode: removes the most recent round entry for BOTH teams together.
+ * - In Solo mode: removes the most recent round entry from whichever player has the most recent entry.
+ * Recalculates all totals, checks 100-bust condition, and resets status to active if dropped below 100.
+ */
+export function undoLastRound(session: GameSession): GameSession {
+  if (session.mode === 'partner') {
+    return undoPartnerLastRound(session);
+  }
+
+  // Solo mode: find player with the highest round index or the most recent round
+  const maxRounds = Math.max(0, ...session.players.map((p) => p.roundScores?.length || 0));
+  if (maxRounds === 0) return session;
+
+  const roundIndexToRemove = maxRounds - 1;
+
+  // In Solo mode, if rounds are synchronized, remove roundIndex from all players who reached that round
+  const updatedPlayers = session.players.map((player) => {
+    const newRounds = [...(player.roundScores || [])];
+    if (newRounds.length === maxRounds) {
+      newRounds.pop();
+    }
+    return {
+      ...player,
+      roundScores: newRounds,
+      totalScore: newRounds.reduce((sum, n) => sum + (Number(n) || 0), 0),
+    };
+  });
+
+  const outcome = evaluateSessionOutcome({
+    ...session,
+    players: updatedPlayers,
+  });
+
+  return {
+    ...session,
+    players: updatedPlayers,
+    winnerId: outcome.hasEnded ? outcome.winnerId : null,
+    loserId: outcome.hasEnded ? outcome.loserId : null,
+    status: outcome.hasEnded ? 'completed' : 'active',
     updatedAt: new Date().toISOString(),
   };
 }
@@ -170,7 +211,7 @@ export function undoPlayerLastScore(
 }
 
 /**
- * Removes a round score for a single player by index and recalculates totals.
+ * Removes a round score for a single player by index and recalculates totals and outcome.
  */
 export function removePlayerScoreAtIndex(
   session: GameSession,
@@ -206,42 +247,8 @@ export function removePlayerScoreAtIndex(
 }
 
 /**
- * Appends a new round of scores to all players in the session.
- */
-export function appendRoundScores(
-  session: GameSession,
-  roundScoresByPlayerId: Record<string, number>
-): GameSession {
-  const updatedPlayers = session.players.map((player) => {
-    const roundScore = roundScoresByPlayerId[player.id] ?? 0;
-    const newRounds = [...(player.roundScores || []), roundScore];
-    return {
-      ...player,
-      roundScores: newRounds,
-      totalScore: newRounds.reduce((sum, n) => sum + (Number(n) || 0), 0),
-    };
-  });
-
-  const outcome = evaluateSessionOutcome({
-    ...session,
-    players: updatedPlayers,
-  });
-
-  const shouldAutoComplete = outcome.hasEnded && session.status === 'active';
-
-  return {
-    ...session,
-    players: updatedPlayers,
-    currentRound: (session.currentRound || 1) + 1,
-    winnerId: shouldAutoComplete ? outcome.winnerId : session.winnerId,
-    loserId: shouldAutoComplete ? outcome.loserId : session.loserId,
-    status: shouldAutoComplete ? 'completed' : session.status,
-    updatedAt: new Date().toISOString(),
-  };
-}
-
-/**
  * Removes a round across all players/teams (0-indexed).
+ * In Partner mode, this keeps both teams in exact sync.
  */
 export function removeRoundAtIndex(session: GameSession, roundIndex: number): GameSession {
   const updatedPlayers = session.players.map((player) => {
@@ -274,6 +281,7 @@ export function removeRoundAtIndex(session: GameSession, roundIndex: number): Ga
 
 /**
  * Edits a specific round score for a single player or team.
+ * Re-evaluates 100-bust status so that if points drop below target, the game returns to active.
  */
 export function updateRoundScore(
   session: GameSession,
@@ -302,9 +310,45 @@ export function updateRoundScore(
   return {
     ...session,
     players: updatedPlayers,
-    winnerId: outcome.hasEnded ? outcome.winnerId : session.winnerId,
-    loserId: outcome.hasEnded ? outcome.loserId : session.loserId,
-    status: outcome.hasEnded ? 'completed' : session.status,
+    winnerId: outcome.hasEnded ? outcome.winnerId : null,
+    loserId: outcome.hasEnded ? outcome.loserId : null,
+    status: outcome.hasEnded ? 'completed' : 'active',
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Partner Mode Round Edit:
+ * Enforces that exactly one team receives the boarded score, and the other team receives 0.
+ */
+export function updatePartnerRound(
+  session: GameSession,
+  roundIndex: number,
+  boardingTeamId: string,
+  boardedScore: number
+): GameSession {
+  const updatedPlayers = session.players.map((team) => {
+    const newRounds = [...(team.roundScores || [])];
+    const isBoarding = team.id === boardingTeamId;
+    newRounds[roundIndex] = isBoarding ? boardedScore : 0;
+    return {
+      ...team,
+      roundScores: newRounds,
+      totalScore: newRounds.reduce((sum, n) => sum + (Number(n) || 0), 0),
+    };
+  });
+
+  const outcome = evaluateSessionOutcome({
+    ...session,
+    players: updatedPlayers,
+  });
+
+  return {
+    ...session,
+    players: updatedPlayers,
+    winnerId: outcome.hasEnded ? outcome.winnerId : null,
+    loserId: outcome.hasEnded ? outcome.loserId : null,
+    status: outcome.hasEnded ? 'completed' : 'active',
     updatedAt: new Date().toISOString(),
   };
 }

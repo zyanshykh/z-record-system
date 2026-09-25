@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GameSession, Player, Team } from '@/types';
-import { Plus, Users, AlertCircle, ArrowRight, ShieldCheck, Flame, Skull, Trophy } from 'lucide-react';
-import { addPartnerRoundScore, undoPartnerLastRound } from '@/lib/game';
+import { Plus, Users, AlertCircle, ArrowRight, ShieldCheck, Flame, Skull, Trophy, Undo2 } from 'lucide-react';
+import { addPartnerRoundScore, undoLastRound } from '@/lib/game';
 
 interface PartnerScorePanelProps {
   session: GameSession;
@@ -25,12 +25,6 @@ export const PartnerScorePanel: React.FC<PartnerScorePanelProps> = ({
     session.players.some((p) => p.id === selectedTeamId)
       ? selectedTeamId
       : session.players[0]?.id || '';
-
-  const teamA = session.players[0];
-  const teamB = session.players[1];
-
-  const metaTeamA = session.teams?.find((t) => t.id === teamA?.id);
-  const metaTeamB = session.teams?.find((t) => t.id === teamB?.id);
 
   const selectedTeam = session.players.find((p) => p.id === activeSelectedId);
   const otherTeam = session.players.find((p) => p.id !== activeSelectedId);
@@ -70,7 +64,7 @@ export const PartnerScorePanel: React.FC<PartnerScorePanelProps> = ({
   };
 
   const handleUndoLast = () => {
-    const updated = undoPartnerLastRound(session);
+    const updated = undoLastRound(session);
     onUpdateSession(updated);
   };
 
@@ -101,9 +95,10 @@ export const PartnerScorePanel: React.FC<PartnerScorePanelProps> = ({
             type="button"
             onClick={handleUndoLast}
             disabled={disabled}
-            className="self-start sm:self-auto rounded-xl border border-zinc-700 bg-zinc-800/80 px-3 py-1.5 text-xs font-semibold text-zinc-300 hover:bg-zinc-700 hover:text-white transition disabled:opacity-40"
+            className="self-start sm:self-auto flex items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-800/90 px-3 py-1.5 text-xs font-bold text-amber-400 hover:bg-zinc-700 hover:text-amber-300 transition active:scale-95 disabled:opacity-40"
           >
-            Undo Round {nextRoundNumber - 1}
+            <Undo2 className="h-3.5 w-3.5" />
+            <span>Undo Round {nextRoundNumber - 1}</span>
           </button>
         )}
       </div>

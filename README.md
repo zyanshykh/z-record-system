@@ -54,6 +54,8 @@
 │   ├── NewGameScreen.tsx  # Setup screen wrapper with rules summary
 │   ├── NewGameModal.tsx   # Modal wrapper for quick session creation
 │   ├── ActiveGame.tsx     # Live scoreboard and full round matrix table
+│   ├── PartnerScorePanel.tsx # 2v2 partner scoring control with auto-0 pair
+│   ├── EditRoundModal.tsx # Comprehensive mistake-recovery modal (edit score, switch boarding team, delete round)
 │   ├── GameResultsModal.tsx # Winner/Loser announcement and sorted standings modal
 │   ├── MatchDetailsModal.tsx # Full round-by-round log viewer for past matches
 │   ├── GameHistory.tsx    # Searchable match history with most-recent-first sorting

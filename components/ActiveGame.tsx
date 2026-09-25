@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { GameSession } from '@/types';
 import { PlayerCard } from './PlayerCard';
 import { PartnerScorePanel } from './PartnerScorePanel';
+import { EditRoundModal } from './EditRoundModal';
 import { GameResultsModal } from './GameResultsModal';
 import {
   Trophy,
@@ -16,12 +17,14 @@ import {
   ChevronUp,
   Users,
   User,
+  Undo2,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
 import {
   addPlayerScore,
+  undoLastRound,
   undoPlayerLastScore,
-  removePlayerScoreAtIndex,
-  updateRoundScore,
   evaluateSessionOutcome,
 } from '@/lib/game';
 
@@ -41,6 +44,10 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
   const [showConfirmFinish, setShowConfirmFinish] = useState(false);
   const [showFullScoreTable, setShowFullScoreTable] = useState(true);
   const [showResultsModal, setShowResultsModal] = useState(true);
+
+  // Edit / Delete Round Modal State
+  const [editingRoundIndex, setEditingRoundIndex] = useState<number | null>(null);
+  const [editingPlayerId, setEditingPlayerId] = useState<string | undefined>(undefined);
 
   if (!session) {
     return (
@@ -75,6 +82,9 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
   const isCompleted = session.status === 'completed';
   const isPartnerMode = session.mode === 'partner';
 
+  // Max rounds across any player/team
+  const maxRounds = Math.max(0, ...session.players.map((p) => p.roundScores?.length || 0));
+
   // Standings sorted from LOWEST score (best) to HIGHEST score (worst)
   const sortedAscending = [...session.players].sort((a, b) => a.totalScore - b.totalScore);
   const bestPlayerId = sortedAscending[0]?.id;
@@ -88,26 +98,36 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
     }
   };
 
-  // Undo most recent score for player
+  // Global Undo Last Round (works in both Solo & Partner mode)
+  const handleUndoLastRound = () => {
+    if (maxRounds === 0) return;
+    const updated = undoLastRound(session);
+    onUpdateSession(updated);
+  };
+
+  // Undo most recent score for player in Solo mode
   const handleUndoPlayerLastScore = (playerId: string) => {
     const updated = undoPlayerLastScore(session, playerId);
     onUpdateSession(updated);
   };
 
-  // Edit individual round score for player
-  const handleEditPlayerRoundScore = (
-    playerId: string,
-    roundIndex: number,
-    newScore: number
-  ) => {
-    const updated = updateRoundScore(session, roundIndex, playerId, newScore);
-    onUpdateSession(updated);
+  // Open round editor
+  const handleOpenEditRound = (playerId: string, roundIndex: number) => {
+    setEditingPlayerId(playerId);
+    setEditingRoundIndex(roundIndex);
   };
 
-  // Delete individual round score for player
-  const handleDeletePlayerRoundScore = (playerId: string, roundIndex: number) => {
-    const updated = removePlayerScoreAtIndex(session, playerId, roundIndex);
-    onUpdateSession(updated);
+  // Save changes from EditRoundModal
+  const handleSaveEditedRound = (updatedSession: GameSession) => {
+    onUpdateSession(updatedSession);
+    if (updatedSession.status === 'completed') {
+      setShowResultsModal(true);
+    }
+  };
+
+  // Delete round from EditRoundModal
+  const handleDeleteEditedRound = (updatedSession: GameSession) => {
+    onUpdateSession(updatedSession);
   };
 
   const handleToggleCompleted = () => {
@@ -126,9 +146,6 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
       setShowResultsModal(true);
     }
   };
-
-  // Max rounds across any player
-  const maxRounds = Math.max(0, ...session.players.map((p) => p.roundScores?.length || 0));
 
   const winner = session.players.find((p) => p.id === session.winnerId);
   const loser = session.players.find((p) => p.id === session.loserId);
@@ -172,7 +189,7 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
             </span>
             <span className="text-xs text-zinc-500">•</span>
             <span className="text-xs font-semibold text-red-400">
-              Bust Limit: {targetScore} pts (1st to reach loses!)
+              Bust Limit: {targetScore} pts
             </span>
           </div>
 
@@ -181,8 +198,20 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
           </h2>
         </div>
 
-        {/* Quick Actions */}
+        {/* Global Round Actions (Undo Last Round, End Match, View Results) */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* UNDO LAST ROUND BUTTON (Active Screen Top Action) */}
+          {maxRounds > 0 && !isCompleted && (
+            <button
+              onClick={handleUndoLastRound}
+              title="Undo the most recent round for all players/teams"
+              className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs font-bold text-amber-400 hover:bg-amber-500/20 shadow transition active:scale-95"
+            >
+              <Undo2 className="h-3.5 w-3.5 stroke-[2.5]" />
+              <span>Undo Last Round (R{maxRounds})</span>
+            </button>
+          )}
+
           {isCompleted && (
             <button
               onClick={() => setShowResultsModal(true)}
@@ -312,7 +341,7 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
                 : `Live Player Cards (${session.players.length} Players)`}
             </span>
             <span className="text-[11px] text-zinc-500">
-              • Lowest score wins! First to {targetScore} pts is marked as LOSER.
+              • Lowest score wins! First to {targetScore} pts loses. Tap any round to edit.
             </span>
           </div>
         </div>
@@ -353,8 +382,7 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
                 targetScore={targetScore}
                 onAddScore={handleAddPlayerScore}
                 onUndoLastScore={handleUndoPlayerLastScore}
-                onEditRoundScore={handleEditPlayerRoundScore}
-                onDeleteRoundScore={handleDeletePlayerRoundScore}
+                onEditRoundScore={handleOpenEditRound}
                 isGameOver={isCompleted}
                 showScoreInput={!isPartnerMode}
               />
@@ -412,6 +440,7 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
                           </th>
                         );
                       })}
+                      <th className="px-6 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800/60">
@@ -436,7 +465,9 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
                           return (
                             <td
                               key={player.id}
-                              className="whitespace-nowrap px-6 py-3 font-mono"
+                              className="whitespace-nowrap px-6 py-3 font-mono cursor-pointer"
+                              onClick={() => handleOpenEditRound(player.id, rIdx)}
+                              title="Click to edit or delete this round"
                             >
                               {hasScore ? (
                                 <div className="flex items-baseline gap-2">
@@ -457,6 +488,18 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
                             </td>
                           );
                         })}
+
+                        {/* Action column for round: Edit / Delete */}
+                        <td className="whitespace-nowrap px-6 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditRound(session.players[0].id, rIdx)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-zinc-700 bg-zinc-800 px-2 py-1 text-[11px] font-semibold text-zinc-300 hover:bg-zinc-700 hover:text-white transition"
+                          >
+                            <Edit2 className="h-3 w-3" />
+                            <span>Edit / Delete</span>
+                          </button>
+                        </td>
                       </tr>
                     ))}
 
@@ -481,6 +524,7 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
                           <span className="ml-1 text-xs text-zinc-500">pts</span>
                         </td>
                       ))}
+                      <td />
                     </tr>
                   </tbody>
                 </table>
@@ -489,6 +533,22 @@ export const ActiveGame: React.FC<ActiveGameProps> = ({
           </div>
         )}
       </div>
+
+      {/* Edit / Delete Round Modal */}
+      {editingRoundIndex !== null && (
+        <EditRoundModal
+          isOpen={editingRoundIndex !== null}
+          roundIndex={editingRoundIndex}
+          initialPlayerId={editingPlayerId}
+          session={session}
+          onClose={() => {
+            setEditingRoundIndex(null);
+            setEditingPlayerId(undefined);
+          }}
+          onSaveRound={handleSaveEditedRound}
+          onDeleteRound={handleDeleteEditedRound}
+        />
+      )}
 
       {/* Game Results Modal */}
       <GameResultsModal

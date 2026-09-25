@@ -1,0 +1,6 @@
+{
+  "name": "Z Record System",
+  "description": "Never lose track of a point again. Personal score tracker for Dominoes games with 100-bust rules, real-time live cards, round-by-round undo, and local storage.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

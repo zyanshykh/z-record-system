@@ -2,7 +2,7 @@
 
 > **"Never lose track of a point again."**
 
-**Z Record System** is a modern, fast, mobile-friendly score tracker and match recorder engineered for Dominoes games (and point accumulation games). Designed specifically for table play on mobile phones or tablets, with zero-latency input, real-time live cards, round-by-round mistake recovery, and 100% client-side persistence in `localStorage`.
+**Z Record System** is a modern, fast, mobile-friendly score tracker and match recorder engineered for Dominoes games (and point accumulation games). Built with **Next.js 14 (App Router)**, **TypeScript**, and **Tailwind CSS**, designed specifically for table play on mobile phones or tablets, with zero-latency input, real-time live cards, round-by-round mistake recovery, and 100% client-side persistence in `localStorage`.
 
 ---
 
@@ -17,6 +17,7 @@
 
 ## 🚀 Key Features
 
+- **Next.js 14 App Router**: Modern server/client architecture with clean routing (`/` and `/history`).
 - **Side-by-Side Player Cards**: Beautiful responsive cards for 2 to 6 players/teams with large total scores and progress bars toward the 100-point bust.
 - **Real-Time Score Entry & Pip Shortcuts**: Direct number input on each card plus quick-pip buttons (`+5`, `+10`, `+20`, `+30`).
 - **Input Validation**: Strict validation ensures scores are positive whole numbers (`> 0`) and blocks invalid/empty submissions.
@@ -26,7 +27,7 @@
 - **Match History Archive (`/history`)**: Browse all past matches sorted most recent first, with winner/loser tags, final scores, search, and full round-by-round inspection modal.
 - **JSON Backup & Restore**: Export and import full game logs for backups or cross-device transfer.
 - **Dark & Light Mode**: Auto-detects system preferences with a manual toggle in the header.
-- **Zero-Config Vercel Deployable**: 100% client-side `localStorage` persistence with no server-only dependencies or external database required.
+- **Zero-Config Vercel Deployable**: 100% client-side `localStorage` persistence with no server-only dependencies or external database required. Clean `npm install` without `--force` or `--legacy-peer-deps`.
 
 ---
 
@@ -34,7 +35,8 @@
 
 ```text
 ├── app/
-│   ├── layout.tsx         # RootLayout with branding, metadata, and footer
+│   ├── globals.css        # Tailwind directives and CSS variables
+│   ├── layout.tsx         # Next.js 14 RootLayout with branding, metadata & viewport
 │   ├── page.tsx           # Home scoreboard page
 │   └── history/
 │       └── page.tsx       # Dedicated /history route
@@ -49,13 +51,17 @@
 │   ├── MatchDetailsModal.tsx # Full round-by-round log viewer for past matches
 │   ├── GameHistory.tsx    # Searchable match history with most-recent-first sorting
 │   ├── Leaderboard.tsx    # Hall of fame rankings, win rates, and round high-scores
-│   └── DominoRuleGuide.tsx # Domino rules breakdown & interactive pip hand calculator
+│   ├── DominoRuleGuide.tsx # Domino rules breakdown & interactive pip hand calculator
+│   └── ZRecordApp.tsx     # Core interactive application state orchestrator
 ├── lib/
 │   ├── game.ts            # Core game logic, 100-bust outcome evaluation, round mutations
 │   ├── storage.ts         # Safe localStorage persistence layer with seed demo games
 │   └── theme.tsx          # Dark/Light theme provider with system auto-detection
-└── types/
-    └── index.ts           # TypeScript interfaces: Player, GameSession, PlayerStats
+├── types/
+│   └── index.ts           # TypeScript interfaces: Player, GameSession, PlayerStats
+├── next.config.mjs        # Next.js 14 configuration
+├── tailwind.config.ts     # Tailwind CSS configuration
+└── postcss.config.mjs     # PostCSS configuration
 ```
 
 ---
@@ -63,8 +69,8 @@
 ## 🛠️ Local Development Setup
 
 ### Prerequisites
-- Node.js (v18 or higher recommended)
-- npm or pnpm or yarn
+- Node.js (v18.17+ or v20+ recommended)
+- npm, pnpm, or yarn
 
 ### 1. Clone & Install Dependencies
 ```bash
@@ -72,6 +78,7 @@ git clone https://github.com/your-username/z-record-system.git
 cd z-record-system
 npm install
 ```
+*(Notice: installs smoothly with standard `npm install` with zero peer dependency conflicts!)*
 
 ### 2. Run the Development Server
 ```bash
@@ -89,11 +96,23 @@ npm run build
 
 ## ☁️ Deploy to Vercel (Zero-Config)
 
-This application is built with pure client-side React/TypeScript and `localStorage`, requiring **no database, no environment variables, and zero configuration**.
+This application is built with pure client-side Next.js 14 and `localStorage`, requiring **no database, no environment variables, and zero configuration**.
 
-### Method 1: Deploy with Vercel CLI
+### Method 1: Deploy via Vercel Web Dashboard (Recommended)
+1. Push this repository to **GitHub**, **GitLab**, or **Bitbucket**.
+2. Go to [vercel.com](https://vercel.com) and log in.
+3. Click **"Add New..."** → **"Project"**.
+4. Select your `z-record-system` repository.
+5. Vercel automatically detects:
+   - **Framework Preset**: `Next.js`
+   - **Root Directory**: `./`
+   - **Build Command**: `next build`
+   - **Output Directory**: `.next`
+6. Click **"Deploy"**.
+
+### Method 2: Deploy with Vercel CLI
 ```bash
-# 1. Install Vercel CLI (if not already installed)
+# 1. Install Vercel CLI globally
 npm install -g vercel
 
 # 2. Login to your Vercel account
@@ -102,20 +121,8 @@ vercel login
 # 3. Deploy
 vercel
 ```
-Accept default settings (`Vite` or `Next.js`), and Vercel will build and deploy the app in seconds.
 
-### Method 2: Deploy via Vercel Web Dashboard (Git)
-1. Push your repository to **GitHub**, **GitLab**, or **Bitbucket**.
-2. Go to [vercel.com](https://vercel.com) and log in.
-3. Click **"Add New..."** → **"Project"**.
-4. Select your `z-record-system` repository.
-5. Keep all default build settings:
-   - **Framework Preset**: Auto-detected (`Vite` or `Other`)
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
-6. Click **"Deploy"**.
-
-Your app is now live with an HTTPS URL and ready for phone score tracking during Dominoes games!
+Your app is immediately live with an HTTPS URL, fully responsive on mobile devices, and ready for table Dominoes score tracking!
 
 ---
 

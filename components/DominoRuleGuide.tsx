@@ -73,7 +73,7 @@ export const DominoRuleGuide: React.FC = () => {
               Standard Round Scoring (Double-Six)
             </h3>
             <p className="mt-2 text-xs leading-relaxed text-zinc-300">
-              The first player or team to place all of their dominoes on the board declares <strong>"Domino!"</strong> and wins the hand. 
+              The first player or team to place all of their dominoes on the board declares <strong>&quot;Domino!&quot;</strong> and wins the hand. 
               The winner is awarded the <strong>sum of all pips</strong> (dots) remaining in the hands of all opposing players.
             </p>
             <div className="mt-3 rounded-xl bg-zinc-950/60 p-3 text-xs text-zinc-400 border border-zinc-800/80">
@@ -108,7 +108,7 @@ export const DominoRuleGuide: React.FC = () => {
             </p>
             <ul className="mt-2 space-y-1.5 text-xs text-zinc-400 list-disc list-inside">
               <li>The player with the <strong>lowest pip count</strong> wins the round.</li>
-              <li>The winner scores the difference between opponents' pips and their own, or in standard rules, the sum of all opposing pips.</li>
+              <li>The winner scores the difference between opponents&apos; pips and their own, or in standard rules, the sum of all opposing pips.</li>
               <li>In case of a tie in points, the round is either voided or awarded to the hand opener.</li>
             </ul>
           </div>
@@ -121,7 +121,7 @@ export const DominoRuleGuide: React.FC = () => {
             <h3 className="text-sm font-bold text-white">Pip Hand Counter</h3>
           </div>
           <p className="mt-2 text-xs text-zinc-400">
-            Quickly count pip dots left in an opponent's hand to compute points earned:
+            Quickly count pip dots left in an opponent&apos;s hand to compute points earned:
           </p>
 
           <div className="mt-4 space-y-2">

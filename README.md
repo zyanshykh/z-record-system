@@ -135,5 +135,24 @@ Your app is immediately live with an HTTPS URL, fully responsive on mobile devic
 
 ---
 
+## ☁️ Optional: Cloud Sync with Supabase (accounts + database)
+
+By default matches live only in the browser's `localStorage`. To keep them in a database, available on any device after signing in, connect a free [Supabase](https://supabase.com) project. Without these steps the app still works in local-only mode.
+
+1. Create a project at supabase.com.
+2. Open **SQL Editor**, paste the contents of [`supabase/schema.sql`](supabase/schema.sql) and run it. This creates the `game_sessions` table where each user can only access their own rows.
+3. Open **Project Settings → API** and copy the **Project URL** and the **anon / publishable key**.
+4. Add them as environment variables (locally in `.env.local`, on Vercel under **Settings → Environment Variables**), then redeploy:
+   ```bash
+   NEXT_PUBLIC_SUPABASE_URL=...
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+   ```
+5. In Supabase **Authentication → URL Configuration**, set **Site URL** to your deployed app URL (and add it to Redirect URLs) so confirmation emails and Google sign-in return to the app.
+6. *(Optional)* For "Continue with Google", enable the Google provider under **Authentication → Providers**.
+
+How it works: the app stays local-first (instant, works offline). When signed in, every change is also saved to Supabase, and both sides are merged on sign-in (the newest copy of each match wins). Matches already saved in the browser as a guest are added to the account on first sign-in. Signing out removes the account's matches from that browser (they stay in the cloud).
+
+---
+
 ## 📄 License
 MIT License. Created for the **Z Record System**.

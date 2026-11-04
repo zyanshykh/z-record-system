@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { GameSession } from '@/types';
 import {
   getStoredSessions,
@@ -11,7 +11,10 @@ import {
   clearAllGameData,
 } from '@/lib/storage';
 import { ThemeProvider } from '@/lib/theme';
+import { useCloudSync } from '@/lib/useCloudSync';
 import { Header } from '@/components/Header';
+import { AuthBar } from '@/components/AuthBar';
+import { AuthModal } from '@/components/AuthModal';
 import { ActiveGame } from '@/components/ActiveGame';
 import { NewGameScreen } from '@/components/NewGameScreen';
 import { GameHistory } from '@/components/GameHistory';
@@ -30,6 +33,20 @@ export function ZRecordApp({ initialTab = 'active' }: ZRecordAppProps) {
     'active' | 'new-game' | 'history' | 'leaderboard' | 'rules'
   >(initialTab);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+
+  // Re-read what is stored in this browser (after a cloud sync, import or sign-out)
+  const refreshFromStorage = useCallback(() => {
+    setSessions(getStoredSessions());
+    setActiveId(getActiveSessionId());
+  }, []);
+
+  const cloud = useCloudSync(refreshFromStorage);
+
+  // Close the sign-in dialog as soon as the user is signed in
+  useEffect(() => {
+    if (cloud.user) setShowAuth(false);
+  }, [cloud.user]);
 
   // Sync with browser URL /history or /new-game if accessible
   useEffect(() => {
@@ -54,24 +71,26 @@ export function ZRecordApp({ initialTab = 'active' }: ZRecordAppProps) {
 
   // Update session and persist to localStorage immediately
   const handleUpdateSession = (updatedSession: GameSession) => {
-    saveSingleSession(updatedSession);
-    const refreshed = getStoredSessions();
-    setSessions(refreshed);
-    setActiveId(updatedSession.id);
-    setActiveSessionId(updatedSession.id);
+    const saved = saveSingleSession(updatedSession);
+    setSessions(getStoredSessions());
+    setActiveId(saved.id);
+    setActiveSessionId(saved.id);
+    void cloud.pushSession(saved);
   };
 
   // Create new session from Partner or Solo setup and start game immediately
   const handleCreateGame = (newSession: GameSession) => {
-    saveSingleSession(newSession);
-    setActiveSessionId(newSession.id);
-    setActiveId(newSession.id);
+    const saved = saveSingleSession(newSession);
+    setActiveSessionId(saved.id);
+    setActiveId(saved.id);
     setSessions(getStoredSessions());
     setCurrentTab('active');
+    void cloud.pushSession(saved);
   };
 
   const handleDeleteSession = (id: string) => {
     deleteSessionById(id);
+    void cloud.removeSession(id);
     const updated = getStoredSessions();
     setSessions(updated);
     if (activeSessionId === id) {
@@ -88,9 +107,19 @@ export function ZRecordApp({ initialTab = 'active' }: ZRecordAppProps) {
     setCurrentTab('active');
   };
 
+  // After a backup import: pick up the merged data and push it to the account
+  const handleReload = () => {
+    refreshFromStorage();
+    void cloud.syncNow();
+  };
+
   const handleClearAllData = () => {
-    if (confirm('Clear all your stored games and reset to an empty state? This action cannot be undone.')) {
+    const message = cloud.user
+      ? 'Clear all your games from this browser AND your account? This action cannot be undone.'
+      : 'Clear all your stored games and reset to an empty state? This action cannot be undone.';
+    if (confirm(message)) {
       clearAllGameData();
+      void cloud.clearCloud();
       setSessions([]);
       setActiveId(null);
       setCurrentTab('new-game');
@@ -132,6 +161,15 @@ export function ZRecordApp({ initialTab = 'active' }: ZRecordAppProps) {
 
         {/* Main Content Area */}
         <main className="mx-auto w-full max-w-7xl flex-1 px-3 py-4 sm:px-6 sm:py-8">
+          <AuthBar
+            user={cloud.user}
+            status={cloud.status}
+            errorMessage={cloud.errorMessage}
+            onSignIn={() => setShowAuth(true)}
+            onSignOut={cloud.signOut}
+            onRetry={() => void cloud.syncNow()}
+          />
+
           {currentTab === 'new-game' && (
             <NewGameScreen
               onStartGame={handleCreateGame}
@@ -155,7 +193,7 @@ export function ZRecordApp({ initialTab = 'active' }: ZRecordAppProps) {
               onSelectSession={handleSelectSession}
               onDeleteSession={handleDeleteSession}
               onStartNewGame={() => setCurrentTab('new-game')}
-              onReload={() => setSessions(getStoredSessions())}
+              onReload={handleReload}
             />
           )}
 
@@ -187,11 +225,13 @@ export function ZRecordApp({ initialTab = 'active' }: ZRecordAppProps) {
             <div className="flex items-center gap-2">
               <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 shadow-sm" />
               <span className="font-medium text-zinc-600 dark:text-zinc-400">
-                100% Client-Side LocalStorage • Real Match Data Only
+                Local-first • Optional cloud sync • Real Match Data Only
               </span>
             </div>
           </div>
         </main>
+
+        <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
       </div>
     </ThemeProvider>
   );

@@ -1,10 +1,41 @@
 import { GameSession } from '@/types';
+import { mergeSessions } from '@/lib/sync';
 
 const STORAGE_KEY_SESSIONS = 'z_record_system_sessions';
 const STORAGE_KEY_ACTIVE_ID = 'z_record_system_active_id';
+const STORAGE_KEY_OWNER = 'z_record_system_owner';
+
+function isValidSession(value: unknown): value is GameSession {
+  if (!value || typeof value !== 'object') return false;
+  const session = value as Partial<GameSession>;
+  return (
+    typeof session.id === 'string' &&
+    session.id.length > 0 &&
+    Array.isArray(session.players) &&
+    session.players.every(
+      (p) => p && typeof p.id === 'string' && typeof p.name === 'string' && Array.isArray(p.roundScores)
+    )
+  );
+}
 
 /**
- * Loads real game sessions saved in localStorage.
+ * Keeps only well-formed sessions from untrusted data (backup files, cloud rows, old storage)
+ * so a bad entry can never crash the app.
+ */
+export function sanitizeSessions(value: unknown): GameSession[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isValidSession).map((session) => ({
+    ...session,
+    status: session.status === 'completed' ? 'completed' : 'active',
+    players: session.players.map((p) => ({
+      ...p,
+      totalScore: p.roundScores.reduce((sum, n) => sum + (Number(n) || 0), 0),
+    })),
+  }));
+}
+
+/**
+ * Loads game sessions saved in localStorage.
  * No dummy or demo data is seeded; returns empty array if nothing is saved.
  */
 export function getStoredSessions(): GameSession[] {
@@ -16,18 +47,13 @@ export function getStoredSessions(): GameSession[] {
     if (!raw) {
       return [];
     }
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
-      // Filter out any legacy dummy games if user had them previously
-      const realOnly = parsed.filter(
-        (s) => s && s.id !== 'game-demo-1' && s.id !== 'game-demo-2'
-      );
-      if (realOnly.length !== parsed.length) {
-        localStorage.setItem(STORAGE_KEY_SESSIONS, JSON.stringify(realOnly));
-      }
-      return realOnly;
+    const sessions = sanitizeSessions(JSON.parse(raw));
+    // Filter out any legacy dummy games if user had them previously
+    const realOnly = sessions.filter((s) => s.id !== 'game-demo-1' && s.id !== 'game-demo-2');
+    if (realOnly.length !== sessions.length) {
+      localStorage.setItem(STORAGE_KEY_SESSIONS, JSON.stringify(realOnly));
     }
-    return [];
+    return realOnly;
   } catch (e) {
     console.error('Error loading game sessions from localStorage:', e);
     return [];
@@ -83,8 +109,9 @@ export function setActiveSessionId(id: string | null): void {
 
 /**
  * Saves or updates a single game session in localStorage instantly.
+ * Returns the stored copy (with its fresh `updatedAt`) so it can be sent to the cloud as-is.
  */
-export function saveSingleSession(session: GameSession): void {
+export function saveSingleSession(session: GameSession): GameSession {
   const sessions = getStoredSessions();
   const index = sessions.findIndex((s) => s.id === session.id);
   const updatedSession = {
@@ -98,6 +125,7 @@ export function saveSingleSession(session: GameSession): void {
     sessions.unshift(updatedSession);
   }
   saveStoredSessions(sessions);
+  return updatedSession;
 }
 
 /**
@@ -108,8 +136,8 @@ export function deleteSessionById(id: string): void {
   saveStoredSessions(sessions);
   const currentActive = getActiveSessionId();
   if (currentActive === id) {
-    const nextActive = sessions.find((s) => s.status === 'active') || (sessions[0] ? sessions[0].id : null);
-    setActiveSessionId(typeof nextActive === 'string' ? nextActive : nextActive ? nextActive.id : null);
+    const nextActive = sessions.find((s) => s.status === 'active') || sessions[0];
+    setActiveSessionId(nextActive ? nextActive.id : null);
   }
 }
 
@@ -126,19 +154,50 @@ export function clearAllGameData(): void {
   }
 }
 
+/**
+ * Which cloud account the matches stored in this browser belong to (null = guest data).
+ * Used so one person's matches are never mixed into another person's account.
+ */
+export function getCacheOwner(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem(STORAGE_KEY_OWNER);
+  } catch {
+    return null;
+  }
+}
+
+export function setCacheOwner(userId: string | null): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (userId) {
+      localStorage.setItem(STORAGE_KEY_OWNER, userId);
+    } else {
+      localStorage.removeItem(STORAGE_KEY_OWNER);
+    }
+  } catch (e) {
+    console.error('Error saving cache owner:', e);
+  }
+}
+
 export function exportBackupJSON(): string {
   const sessions = getStoredSessions();
   return JSON.stringify(sessions, null, 2);
 }
 
+/**
+ * Imports a backup file. Valid matches are merged into the existing ones (newest copy of
+ * each match wins) instead of replacing everything. Returns false if nothing usable was found.
+ */
 export function importBackupJSON(jsonStr: string): boolean {
   try {
-    const parsed = JSON.parse(jsonStr);
-    if (Array.isArray(parsed)) {
-      saveStoredSessions(parsed);
-      return true;
+    const imported = sanitizeSessions(JSON.parse(jsonStr));
+    if (imported.length === 0) {
+      return false;
     }
-    return false;
+    const { merged } = mergeSessions(getStoredSessions(), imported);
+    saveStoredSessions(merged);
+    return true;
   } catch (e) {
     console.error('Failed to import backup JSON:', e);
     return false;

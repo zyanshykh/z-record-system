@@ -42,7 +42,7 @@ export default function RootLayout({
               <span>Never lose track of a point again.</span>
             </div>
             <span className="text-zinc-400 dark:text-zinc-500 text-[11px]">
-              Next.js 14 App Router • 100% Client-Side LocalStorage • Zero-Config Vercel Deployable
+              Next.js 14 App Router • Local-first with optional Supabase sync • Vercel Deployable
             </span>
           </div>
         </footer>

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Mail, Lock, Loader2 } from 'lucide-react';
 import { signInWithEmail, signUpWithEmail, signInWithGoogle } from '@/lib/cloud';
+import { isGoogleSignInEnabled } from '@/lib/supabase';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -17,6 +18,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+
+  // Only offer "Continue with Google" when the project actually has it switched on
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    isGoogleSignInEnabled().then((enabled) => {
+      if (!cancelled) setGoogleEnabled(enabled);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -53,7 +67,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/70 p-3 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
@@ -124,19 +138,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           </button>
         </form>
 
-        <div className="my-4 flex items-center gap-3 text-[11px] uppercase tracking-wider text-zinc-400">
-          <span className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
-          or
-          <span className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
-        </div>
+        {googleEnabled && (
+          <>
+            <div className="my-4 flex items-center gap-3 text-[11px] uppercase tracking-wider text-zinc-400">
+              <span className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+              or
+              <span className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+            </div>
 
-        <button
-          type="button"
-          onClick={handleGoogle}
-          className="flex min-h-11 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
-        >
-          Continue with Google
-        </button>
+            <button
+              type="button"
+              onClick={handleGoogle}
+              className="flex min-h-11 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+            >
+              Continue with Google
+            </button>
+          </>
+        )}
 
         <button
           type="button"

@@ -162,7 +162,7 @@ export const NewGameForm: React.FC<NewGameFormProps> = ({
         <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2">
           Select Game Mode
         </label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <button
             type="button"
             onClick={() => setMode('partner')}
@@ -181,12 +181,12 @@ export const NewGameForm: React.FC<NewGameFormProps> = ({
             >
               <Users className="h-5 w-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="text-sm font-black text-zinc-900 dark:text-white">
                   Partner Mode
                 </span>
-                <span className="rounded bg-amber-500/20 px-1.5 py-0.2 text-[10px] font-extrabold text-amber-500">
+                <span className="rounded bg-amber-500/20 shrink-0 whitespace-nowrap px-1.5 py-0.5 text-[10px] font-extrabold text-amber-500">
                   2 vs 2
                 </span>
               </div>
@@ -214,12 +214,12 @@ export const NewGameForm: React.FC<NewGameFormProps> = ({
             >
               <User className="h-5 w-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="text-sm font-black text-zinc-900 dark:text-white">
                   Solo Mode
                 </span>
-                <span className="rounded bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.2 text-[10px] font-bold text-zinc-600 dark:text-zinc-400">
+                <span className="rounded bg-zinc-200 dark:bg-zinc-800 shrink-0 whitespace-nowrap px-1.5 py-0.5 text-[10px] font-bold text-zinc-600 dark:text-zinc-400">
                   2-6 Players
                 </span>
               </div>
@@ -245,18 +245,18 @@ export const NewGameForm: React.FC<NewGameFormProps> = ({
               ? 'e.g. Domino Doubles Championship, Table 1'
               : 'e.g. Friday Night Dominoes, Table 1'
           }
-          className="mt-1.5 w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition"
+          className="mt-1.5 w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 py-3 text-base text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 sm:py-2.5 sm:text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition"
         />
       </div>
 
       {/* PARTNER MODE CONFIGURATION */}
       {mode === 'partner' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
               Team Rosters (2 Teams • 2 Partners Each)
             </label>
-            <span className="text-xs font-semibold text-amber-500">2 vs 2 Doubles</span>
+            <span className="shrink-0 whitespace-nowrap text-xs font-semibold text-amber-500">2 vs 2 Doubles</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -271,7 +271,7 @@ export const NewGameForm: React.FC<NewGameFormProps> = ({
                   value={teamAName}
                   onChange={(e) => setTeamAName(e.target.value)}
                   placeholder="Team A Name"
-                  className="w-full bg-transparent text-sm font-black text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none border-b border-amber-500/30 pb-0.5"
+                  className="w-full min-w-0 bg-transparent text-base font-black text-zinc-900 sm:text-sm dark:text-white placeholder-zinc-400 focus:outline-none border-b border-amber-500/30 pb-0.5"
                   required
                 />
               </div>
@@ -286,7 +286,7 @@ export const NewGameForm: React.FC<NewGameFormProps> = ({
                     value={teamAPlayer1}
                     onChange={(e) => setTeamAPlayer1(e.target.value)}
                     placeholder="Partner 1 Name"
-                    className="mt-1 w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:border-amber-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2.5 text-base text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 sm:py-2 sm:text-sm focus:border-amber-500 focus:outline-none"
                     required
                   />
                 </div>
@@ -299,7 +299,7 @@ export const NewGameForm: React.FC<NewGameFormProps> = ({
                     value={teamAPlayer2}
                     onChange={(e) => setTeamAPlayer2(e.target.value)}
                     placeholder="Partner 2 Name"
-                    className="mt-1 w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:border-amber-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2.5 text-base text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 sm:py-2 sm:text-sm focus:border-amber-500 focus:outline-none"
                     required
                   />
                 </div>
@@ -317,7 +317,7 @@ export const NewGameForm: React.FC<NewGameFormProps> = ({
                   value={teamBName}
                   onChange={(e) => setTeamBName(e.target.value)}
                   placeholder="Team B Name"
-                  className="w-full bg-transparent text-sm font-black text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none border-b border-blue-500/30 pb-0.5"
+                  className="w-full min-w-0 bg-transparent text-base font-black text-zinc-900 sm:text-sm dark:text-white placeholder-zinc-400 focus:outline-none border-b border-blue-500/30 pb-0.5"
                   required
                 />
               </div>
@@ -332,7 +332,7 @@ export const NewGameForm: React.FC<NewGameFormProps> = ({
                     value={teamBPlayer1}
                     onChange={(e) => setTeamBPlayer1(e.target.value)}
                     placeholder="Partner 1 Name"
-                    className="mt-1 w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:border-blue-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2.5 text-base text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 sm:py-2 sm:text-sm focus:border-blue-500 focus:outline-none"
                     required
                   />
                 </div>
@@ -345,7 +345,7 @@ export const NewGameForm: React.FC<NewGameFormProps> = ({
                     value={teamBPlayer2}
                     onChange={(e) => setTeamBPlayer2(e.target.value)}
                     placeholder="Partner 2 Name"
-                    className="mt-1 w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:border-blue-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2.5 text-base text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 sm:py-2 sm:text-sm focus:border-blue-500 focus:outline-none"
                     required
                   />
                 </div>
@@ -415,7 +415,7 @@ export const NewGameForm: React.FC<NewGameFormProps> = ({
                     value={name}
                     onChange={(e) => handleSoloNameChange(index, e.target.value)}
                     placeholder={`Player ${index + 1} name`}
-                    className="w-full bg-transparent text-sm font-medium text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none"
+                    className="w-full min-w-0 bg-transparent text-base font-medium text-zinc-900 sm:text-sm dark:text-white placeholder-zinc-400 focus:outline-none"
                     required
                   />
                   {soloPlayerCount > 2 && (
@@ -437,13 +437,13 @@ export const NewGameForm: React.FC<NewGameFormProps> = ({
 
       {/* Target Bust Score (100 Points) */}
       <div>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
           <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             Target Bust Score (Standard: 100 Points)
           </label>
           <span className="text-xs text-zinc-400">First to reach loses</span>
         </div>
-        <div className="mt-2 grid grid-cols-4 gap-2">
+        <div className="mt-2 grid grid-cols-2 gap-2 min-[380px]:grid-cols-4">
           {[50, 100, 150, 200].map((pts) => (
             <button
               key={pts}
@@ -452,7 +452,7 @@ export const NewGameForm: React.FC<NewGameFormProps> = ({
                 setTargetScore(pts);
                 setCustomTarget('');
               }}
-              className={`rounded-xl py-2 text-xs font-bold transition ${
+              className={`min-h-11 rounded-xl py-2 text-xs font-bold transition ${
                 targetScore === pts && !customTarget
                   ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 ring-2 ring-amber-500'
                   : 'border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400'
@@ -465,19 +465,19 @@ export const NewGameForm: React.FC<NewGameFormProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+      <div className="flex flex-col-reverse gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800 sm:flex-row sm:items-center sm:justify-end">
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-xl px-4 py-2.5 text-sm font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+            className="min-h-11 rounded-xl px-4 py-2.5 text-sm font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
           >
             Cancel
           </button>
         )}
         <button
           type="submit"
-          className="flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-2.5 text-sm font-bold text-zinc-950 shadow-md hover:bg-amber-400 transition active:scale-95"
+          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-2.5 text-sm font-bold sm:w-auto text-zinc-950 shadow-md hover:bg-amber-400 transition active:scale-95"
         >
           <span>Start {mode === 'partner' ? 'Partner Match' : 'Solo Match'}</span>
           <ArrowRight className="h-4 w-4" />

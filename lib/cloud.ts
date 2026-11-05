@@ -45,9 +45,30 @@ export interface AuthResult {
   needsEmailConfirmation?: boolean;
 }
 
+/** Turns Supabase's technical auth errors into something a player can act on. */
+function friendlyAuthError(message: string): string {
+  const text = message.toLowerCase();
+  if (text.includes('email not confirmed')) {
+    return 'Please confirm your email first: open the link we sent you (check Spam too), then sign in.';
+  }
+  if (text.includes('invalid login credentials')) {
+    return 'Wrong email or password. If you just created this account, confirm your email first.';
+  }
+  if (text.includes('provider is not enabled') || text.includes('unsupported provider')) {
+    return 'Google sign-in is not set up yet. Use email and password instead.';
+  }
+  if (text.includes('rate limit') || text.includes('too many')) {
+    return 'Too many attempts. Please wait a few minutes and try again.';
+  }
+  if (text.includes('already registered')) {
+    return 'This email already has an account. Try signing in instead.';
+  }
+  return message;
+}
+
 export async function signInWithEmail(email: string, password: string): Promise<AuthResult> {
   const { error } = await client().auth.signInWithPassword({ email, password });
-  return { error: error?.message ?? null };
+  return { error: error ? friendlyAuthError(error.message) : null };
 }
 
 export async function signUpWithEmail(email: string, password: string): Promise<AuthResult> {
@@ -56,7 +77,10 @@ export async function signUpWithEmail(email: string, password: string): Promise<
     password,
     options: { emailRedirectTo: window.location.origin },
   });
-  return { error: error?.message ?? null, needsEmailConfirmation: !error && !data.session };
+  return {
+    error: error ? friendlyAuthError(error.message) : null,
+    needsEmailConfirmation: !error && !data.session,
+  };
 }
 
 export async function signInWithGoogle(): Promise<AuthResult> {
@@ -64,5 +88,5 @@ export async function signInWithGoogle(): Promise<AuthResult> {
     provider: 'google',
     options: { redirectTo: window.location.origin },
   });
-  return { error: error?.message ?? null };
+  return { error: error ? friendlyAuthError(error.message) : null };
 }

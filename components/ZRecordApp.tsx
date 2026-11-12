@@ -160,7 +160,7 @@ export function ZRecordApp({ initialTab = 'active' }: ZRecordAppProps) {
         />
 
         {/* Main Content Area */}
-        <main className="mx-auto w-full max-w-7xl flex-1 px-3 py-4 sm:px-6 sm:py-8">
+        <main className="mx-auto w-full max-w-7xl flex-1 px-3 pb-24 pt-4 sm:px-6 sm:py-8 md:pb-8">
           <AuthBar
             user={cloud.user}
             status={cloud.status}
